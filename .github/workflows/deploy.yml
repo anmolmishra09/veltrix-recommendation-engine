@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Get EKS cluster name from Terraform output
+      id: terraform
+      run: |
+        # In a real scenario, we would run terraform output from the infrastructure directory
+        # For simplicity, we assume the cluster name is stored in a secret or we can fetch it from SSM
+        # We'll set it as an environment variable for the next steps
+        echo "EKS_CLUSTER_NAME=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_ENV
+
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region us-east-1
+
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+    - name: Set Docker image
+      run: |
+        kubectl set image deployment/ml-recommendation-platform ml-recommendation-platform=${{ secrets.DOCKERHUB_USERNAME }}/ml-recommendation-platform:${{ github.sha }} -n ml-platform
+
+    - name: Rollout status
+      run: |
+        kubectl rollout status deployment/ml-recommendation-platform -n ml-platform --timeout=120s

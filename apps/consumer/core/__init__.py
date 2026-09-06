@@ -1,0 +1,1 @@
+"""Consumer core package."""

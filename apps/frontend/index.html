@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Recommendation Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .product-img {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+        .rating-stars {
+            color: #fbbf24;
+        }
+        .price-old {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        .price-new {
+            font-weight: bold;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    <i class="fas fa-store text-blue-600 mr-2"></i>ShopSmart
+                </h1>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="cartBtn" class="relative flex items-center text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-shopping-cart fa-lg"></i>
+                            <span id="cartCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full">0</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button id="searchBtn" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-search fa-lg"></i>
+                        </button>
+                        <div id="searchDropdown" class="hidden absolute-right mt-2 w-56 bg-white rounded-md shadow-lg z-20">
+                            <form id="searchForm" class="p-4">
+                                <input type="text" id="searchInput" class="w-full p-2 border rounded" placeholder="Search products...">
+                                <button type="submit" class="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="mb-6">
+            <div class="flex space-x-4 border-b-2 border-gray-200 pb-2">
+                <button id="homeTab" class="tab-active px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-400">Home</button>
+                <button id="productsTab" class="tab-inactive px-4 py-2 text-gray-500 font-medium hover:text-gray-700">Products</button>
+                <button id="recommendationsTab" class="tab-inactive px-4 py-2 text-gray-500 font-medium hover:text-gray-700">Recommendations</button>
+                <button id="analyticsTab" class="tab-inactive px-4 py-2 text-gray-500 font-medium hover:text-gray-700">Analytics</button>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <div id="contentArea">
+            <!-- Home Tab Content -->
+            <div id="homeContent" class="tab-content active">
+                <section class="mb-8">
+                    <h2 class="text-2xl font-semibold mb-4">Featured Collections</h2>
+                    <div id="featuredCollections" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <!-- Collections will be populated here -->
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-semibold mb-4">Today's Deals</h2>
+                    <div id="todaysDeals" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <!-- Deals will be populated here -->
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold mb-4">Recommended For You</h2>
+                    <div id="homeRecommendations" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <!-- Recommendations will be populated here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Products Tab Content -->
+            <div id="productsContent" class="tab-content hidden">
+                <div class="mb-4">
+                    <input type="text" id="productSearch" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search products...">
+                </div>
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <button id="filterAll" class="filter-active px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded">All</button>
+                    <button id="filterElectronics" class="filter-inactive px-3 py-1 text-sm rounded hover:bg-gray-100">Electronics</button>
+                    <button id="filterClothing" class="filter-inactive px-3 py-1 text-sm rounded hover:bg-gray-100">Clothing</button>
+                    <button id="filterHome" class="filter-inactive px-3 py-1 text-sm rounded hover:bg-gray-100">Home & Garden</button>
+                </div>
+                <div id="productsGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Products will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recommendations Tab Content -->
+            <div id="recommendationsContent" class="tab-content hidden">
+                <div class="mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <h2 class="text-2xl font-semibold mb-3 sm:mb-0">Your Personalized Recommendations</h2>
+                        <div class="flex space-x-3">
+                            <label for="userIdSelect" class="mr-2">User ID:</label>
+                            <select id="userIdSelect" class="p-2 border rounded">
+                                <option value="user_1">user_1</option>
+                                <option value="user_2">user_2</option>
+                                <option value="user_3">user_3</option>
+                                <option value="user_4">user_4</option>
+                                <option value="user_5">user_5</option>
+                            </select>
+                            <button id="getRecommendationsBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ml-2">
+                                Get Recommendations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="recommendationsLoading" class="flex items-center justify-center py-8 hidden">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="text-gray-600">Generating recommendations...</span>
+                    </div>
+                </div>
+                <div id="recommendationsResults" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Recommendations will be populated here -->
+                </div>
+                <div id="recommendationsInfo" class="mt-6 p-4 bg-blue-50 rounded-lg hidden">
+                    <h3 class="font-semibold mb-2">Recommendation Details</h3>
+                    <p id="expInfo" class="text-sm text-gray-600"></p>
+                    <p id="modelInfo" class="text-sm text-gray-600"></p>
+                </div>
+            </div>
+
+            <!-- Analytics Tab Content -->
+            <div id="analyticsContent" class="tab-content hidden">
+                <div class="grid gap-6 sm:grid-cols-2">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-xl font-semibold mb-4">Platform Overview</h3>
+                            <div class="grid gap-4 sm:grid-cols-2 text-center">
+                                <div>
+                                    <p class="text-gray-500 font-medium">Total Users</p>
+                                    <p id="totalUsers" class="text-2xl font-bold text-blue-600">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500 font-medium">Total Products</p>
+                                    <p id="totalProducts" class="text-2xl font-bold text-green-600">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500 font-medium">Total Interactions</p>
+                                    <p id="totalInteractions" class="text-2xl font-bold text-purple-600">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500 font-medium">Active Experiments</p>
+                                    <p id="activeExperiments" class="text-2xl font-bold text-orange-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-xl font-semibold mb-4">Experiment Performance</h3>
+                            <div id="experimentChart" class="h-48">
+                                <!-- Chart will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-xl font-semibold mb-4">Top Performing Products</h3>
+                            <div id="topProducts" class="space-y-4">
+                                <!-- Top products will be listed here -->
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-xl font-semibold mb-4">User Engagement Metrics</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span>Click-Through Rate (CTR)</span>
+                                    <span id="ctrMetric" class="font-medium">0%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Conversion Rate</span>
+                                    <span id="conversionRateMetric" class="font-medium">0%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Avg. Revenue per User</span>
+                                    <span id="revenuePerUserMetric" class="font-medium">$0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Recommendation Coverage</span>
+                                    <span id="coverageMetric" class="font-medium">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-10 pt-6 border-t border-gray-200 text-center text-gray-500">
+            <p>&copy; 2026 ShopSmart Demo. Built with Recommendation Platform.</p>
+        </p>
+    </div>
+
+    <!-- Modal for Product Details -->
+    <div id="productModal" class="fixed inset-0 hidden bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg w-11/12 md:w-9/12 max-w-4xl">
+            <div class="flex flex-col md:flex-row">
+                <!-- Product Images -->
+                <div class="w-full md:w-1/2 space-y-4 p-6">
+                    <div class="space-y-2">
+                        <img id="modalProductImage" class="w-full h-64 object-cover rounded-lg" src="" alt="">
+                        <div class="flex space-x-2">
+                            <img class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-gray-300" src="" alt="">
+                            <img class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-gray-300" src="" alt="">
+                            <img class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-gray-300" src="" alt="">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Details -->
+                <div class="w-full md:w-1/2 p-6">
+                    <button id="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <h2 id="modalProductTitle" class="text-2xl font-bold mb-2"></h2>
+                    <div class="flex mb-2">
+                        <div class="rating-stars text-lg" id="modalProductRating"></div>
+                        <span id="modalProductReviewCount" class="ml-2 text-gray-500">(0 reviews)</span>
+                    </div>
+                    <div class="mb-4">
+                        <p id="modalProductPriceOld" class="price-old text-lg"></p>
+                        <p id="modalProductPriceNew" class="price-new text-2xl"></p>
+                    </p>
+                    <div class="mb-4">
+                        <button id="addToCartBtn" class="w-full px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
+                            <i class="fas fa-shopping-cart mr-2"></i> Add to Cart
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <button id="wishlistBtn" class="w-full px-4 py-3 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 flex items-center justify-center">
+                            <i class="far fa-heart mr-2"></i> Add to Wishlist
+                        </button>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-3">Product Details</h3>
+                    <p id="modalProductDescription" class="text-gray-700 mb-4"></p>
+                    <div class="space-y-2">
+                        <p class="font-medium">Category: <span id="modalProductCategory"></span></p>
+                        <p class="font-medium">Brand: <span id="modalProductBrand"></span></p>
+                        <p class="font-medium">Availability: <span id="modalProductAvailability"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabs = {
+        home: { btn: document.getElementById('homeTab'), content: document.getElementById('homeContent') },
+        products: { btn: document.getElementById('productsTab'), content: document.getElementById('productsContent') },
+        recommendations: { btn: document.getElementById('recommendationsTab'), content: document.getElementById('recommendationsContent') },
+        analytics: { btn: document.getElementById('analyticsTab'), content: document.getElementById('analyticsContent') }
+    };
+
+    Object.values(tabs).forEach(tab => {
+        tab.btn.addEventListener('click', () => {
+            // Deactivate all tabs
+            Object.values(tabs).forEach(t => {
+                t.btn.classList.remove('tab-active');
+                t.btn.classList.add('tab-inactive');
+                t.content.classList.add('hidden');
+                t.content.classList.remove('active');
+            });
+
+            // Activate clicked tab
+            tab.btn.classList.remove('tab-inactive');
+            tab.btn.classList.add('tab-active');
+            tab.content.classList.remove('hidden');
+            tab.content.classList.add('active');
+        });
+    });
+
+    // Search toggle
+    const searchBtn = document.getElementById('searchBtn');
+    const searchDropdown = document.getElementById('searchDropdown');
+    searchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchDropdown.classList.toggle('hidden');
+    });
+
+    // Close search dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchDropdown.contains(e.target) && e.target !== searchBtn) {
+            searchDropdown.classList.add('hidden');
+        }
+    });
+
+    // Product filters
+    const filterButtons = [
+        document.getElementById('filterAll'),
+        document.getElementById('filterElectronics'),
+        document.getElementById('filterClothing'),
+        document.getElementById('filterHome')
+    ];
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.replace('filter-active', 'filter-inactive'));
+            btn.classList.replace('filter-inactive', 'filter-active');
+            // In a real app, we would filter products here
+        });
+    });
+
+    // Get recommendations button
+    const getRecommendationsBtn = document.getElementById('getRecommendationsBtn');
+    const userIdSelect = document.getElementById('userIdSelect');
+    const recommendationsLoading = document.getElementById('recommendationsLoading');
+    const recommendationsResults = document.getElementById('recommendationsResults');
+    const recommendationsInfo = document.getElementById('recommendationsInfo');
+    const expInfo = document.getElementById('expInfo');
+    const modelInfo = document.getElementById('modelInfo');
+
+    getRecommendationsBtn.addEventListener('click', async () => {
+        const userId = userIdSelect.value;
+        recommendationsLoading.classList.remove('hidden');
+        recommendationsResults.innerHTML = '';
+        recommendationsInfo.classList.add('hidden');
+
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/recommendations/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    k: 8,
+                    context: {
+                        source: "homepage",
+                        device: "desktop"
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.recommendations.length === 0) {
+                recommendationsResults.innerHTML = '<p class="col-span-2 text-center py-8">No recommendations found.</p>';
+            } else {
+                // Display recommendations
+                data.recommendations.forEach((rec, index) => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow';
+                    productCard.innerHTML = `
+                        <div class="relative">
+                            <img class="w-full h-48 object-cover" src="https://via.placeholder.com/300x200?text=Product+${rec.item_id}" alt="Product ${rec.item_id}">
+                            <div class="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                Score: ${rec.score.toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold mb-2">Product ${rec.item_id}</h3>
+                            <p class="text-gray-600 mb-2">Rank: #${rec.rank}</p>
+                            <div class="mt-2">
+                                <button onclick="showProductDetails(${rec.item_id})" class="w-full px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm text-gray-700">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    recommendationsResults.appendChild(productCard);
+                });
+
+                // Show experiment info if available
+                if (data.experiment_id && data.experiment_variant) {
+                    recommendationsInfo.classList.remove('hidden');
+                    expInfo.textContent = `Experiment: ${data.experiment_id} (${data.experiment_variant} variant)`;
+                    modelInfo.textContent = `Model used: ${data.ranking_model_used}`;
+                }
+            }
+        } catch (error) {
+            recommendationsResults.innerHTML = `<p class="col-span-2 text-center py-8 text-red-500">Error loading recommendations: ${error.message}</p>`;
+        } finally {
+            recommendationsLoading.classList.add('hidden');
+        }
+    });
+
+    // Initialize page
+    initializeHomePage();
+});
+
+// Initialize home page with sample data
+function initializeHomePage() {
+    // Featured collections
+    const featuredCollections = document.getElementById('featuredCollections');
+    const collections = [
+        { id: 1, name: "Summer Essentials", image: "https://via.placeholder.com/400x300?text=Summer+Essentials" },
+        { id: 2, name: "Tech Gadgets", image: "https://via.placeholder.com/400x300?text=Tech+Gadgets" },
+        { id: 3, name: "Home Decor", image: "https://via.placeholder.com/400x300?text=Home+Decor" },
+        { id: 4, name: "Fashion Trends", image: "https://via.placeholder.com/400x300?text=Fashion+Trends" }
+    ];
+
+    collections.forEach(collection => {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'bg-white rounded-lg shadow overflow-hidden';
+        colDiv.innerHTML = `
+            <img src="${collection.image}" alt="${collection.name}" class="w-full h-48 object-cover">
+            <div class="p-4">
+                <h3 class="font-semibold">${collection.name}</h3>
+                <p class="text-gray-600 text-sm">Shop the collection</p>
+            </div>
+        `;
+        featuredCollections.appendChild(colDiv);
+    });
+
+    // Today's deals
+    const todaysDeals = document.getElementById('todaysDeals');
+    const deals = [
+        { id: 1, title: "Wireless Headphones", price: 89.99, original: 129.99, image: "https://via.placeholder.com/300x200?text=Headphones" },
+        { id: 2, title: "Smart Watch", price: 199.99, original: 249.99, image: "https://via.placeholder.com/300x200?text=Watch" },
+        { id: 3, title: "Bluetooth Speaker", price: 49.99, original: 79.99, image: "https://via.placeholder.com/300x200?text=Speaker" },
+        { id: 4, title: "Phone Case", price: 15.99, original: 24.99, image: "https://via.placeholder.com/300x200?text=Case" }
+    ];
+
+    deals.forEach(deal => {
+        const dealDiv = document.createElement('div');
+        dealDiv.className = 'bg-white rounded-lg shadow overflow-hidden';
+        dealDiv.innerHTML = `
+            <div class="relative">
+                <img src="${deal.image}" alt="${deal.title}" class="w-full h-48 object-cover">
+                <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">-${Math.round(((deal.original - deal.price) / deal.original) * 100)}%</span>
+            </div>
+            <div class="p-4">
+                <h3 class="font-semibold mb-2">${deal.title}</h3>
+                <p class="text-gray-500 line-through">${deal.original.toFixed(2)}</p>
+                <p class="text-xl font-bold text-red-600">${deal.price.toFixed(2)}</p>
+                <button onclick="showProductDetails(${deal.id})" class="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Add to Cart
+                </p>
+            </div>
+        `;
+        todaysDeals.appendChild(dealDiv);
+    });
+
+    // Home recommendations (initial load)
+    loadHomeRecommendations();
+}
+
+// Load recommendations for home page
+function loadHomeRecommendations() {
+    const homeRecs = document.getElementById('homeRecommendations');
+    homeRecs.innerHTML = '<div class="col-span-4 flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
+
+    // Simulate loading recommendations for a default user
+    setTimeout(() => {
+        fetch('http://localhost:8000/api/v1/recommendations/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: 'user_1',
+                k: 4,
+                context: {
+                    source: "homepage",
+                    device: "desktop"
+                }
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            homeRecs.innerHTML = '';
+            if (data.recommendations.length === 0) {
+                homeRecs.innerHTML = '<p class="col-span-4 text-center py-8">No recommendations available.</p>';
+                return;
+            }
+
+            data.recommendations.forEach(rec => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow';
+                productCard.innerHTML = `
+                    <div class="relative">
+                        <img class="w-full h-48 object-cover" src="https://via.placeholder.com/300x200?text=Product+${rec.item_id}" alt="Product ${rec.item_id}">
+                        <div class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                            #${rec.rank}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold mb-2">Product ${rec.item_id}</h3>
+                        <p class="text-gray-600 mb-2">${Math.round(rec.score * 100)}% match</p>
+                        <div class="mt-2">
+                            <button onclick="showProductDetails(${rec.item_id})" class="w-full px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm text-gray-700">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                homeRecs.appendChild(productCard);
+            });
+        })
+        .catch(error => {
+            homeRecs.innerHTML = `<p class="col-span-4 text-center py-8 text-red-500">Error: ${error.message}</p>`;
+        });
+    }, 1000);
+}
+
+// Show product details modal
+function showProductDetails(productId) {
+    const modal = document.getElementById('productModal');
+    // In a real app, we would fetch product details from the API
+    // For demo, we'll populate with sample data
+    document.getElementById('modalProductTitle').textContent = `Product ${productId}`;
+    document.getElementById('modalProductImage').src = `https://via.placeholder.com/500x500?text=Product+${productId}`;
+    document.getElementById('modalProductDescription').textContent = `This is a sample description for product ${productId}. It showcases the features and benefits of this amazing product that you won't want to miss.`;
+    document.getElementById('modalProductPriceOld').textContent = `$${(productId * 10 + 50).toFixed(2)}`;
+    document.getElementById('modalProductPriceNew').textContent = `$${(productId * 10 + 30).toFixed(2)}`;
+    document.getElementById('modalProductCategory').textContent = `Category ${((productId % 5) + 1)}`;
+    document.getElementById('modalProductBrand').textContent = `Brand ${['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'][productId % 5]}`;
+    document.getElementById('modalProductAvailability').textContent = `In Stock (${Math.floor(Math.random() * 100) + 10} available)`;
+
+    // Rating stars (sample)
+    const rating = Math.floor(Math.random() * 5) + 1;
+    const starsContainer = document.getElementById('modalProductRating');
+    starsContainer.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const star = document.createElement('i');
+        star.className = 'fas fa-star';
+        if (i < rating) {
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.add('far');
+            star.classList.add('text-gray-300');
+        }
+        starsContainer.appendChild(star);
+    }
+    document.getElementById('modalProductReviewCount').textContent = `(${Math.floor(Math.random() * 100) + 20} reviews)`;
+
+    modal.classList.remove('hidden');
+}
+
+// Close modal
+document.getElementById('closeModal').addEventListener('click', function() {
+    document.getElementById('productModal').classList.add('hidden');
+});
+
+// Close modal when clicking outside
+document.getElementById('productModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+
+// Handle search form submission
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const query = document.getElementById('searchInput').value;
+    if (query.trim()) {
+        // In a real app, we would navigate to search results
+        alert(`Searching for: ${query}`);
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchDropdown').classList.add('hidden');
+    }
+});
+
+// Initialize analytics data (sample)
+function initializeAnalytics() {
+    // Update stats
+    document.getElementById('totalUsers').textContent = '1,245';
+    document.getElementById('totalProducts').textContent = '3,420';
+    document.getElementById('totalInteractions').textContent = '18,930';
+    document.getElementById('activeExperiments').textContent = '3';
+
+    // Update metrics
+    document.getElementById('ctrMetric').textContent = '4.2%';
+    document.getElementById('conversionRateMetric').textContent = '2.8%';
+    document.getElementById('revenuePerUserMetric').textContent = '$15.75';
+    document.getElementById('coverageMetric').textContent = '68%';
+
+    // Sample top products
+    const topProductsContainer = document.getElementById('topProducts');
+    const topProducts = [
+        { id: 101, name: "Wireless Earbuds", views: 1240, purchases: 89 },
+        { id: 102, name: "Smartphone Case", views: 980, purchases: 76 },
+        { id: 103, name: "Laptop Stand", views: 870, purchases: 65 },
+        { id: 104, name: "Desk Lamp", views: 760, purchases: 58 }
+    ];
+
+    topProductsContainer.innerHTML = '';
+    topProducts.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.className = 'flex justify-between items-center p-3 bg-gray-50 rounded';
+        productDiv.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <img src="https://via.placeholder.com/40x40?text=P${product.id}" class="w-8 h-8 rounded-lg" alt="">
+                <div>
+                    <div class="font-medium">${product.name}</div>
+                    <div class="text-sm text-gray-500">${product.views} views • ${product.purchases} purchases</div>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">${((product.purchases / product.views) * 100).toFixed(1)}%</span>
+            </div>
+        `;
+        topProductsContainer.appendChild(productDiv);
+    });
+}
+
+// Call initialization
+initializeAnalytics();
+</script>
+</html>

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "recommendation-platform.fullname" . }}-consumer
+  labels:
+    {{- include "recommendation-platform.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "recommendation-platform.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "recommendation-platform.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "recommendation-platform.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}-consumer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "recommendation-platform.fullname" . }}-config
+            - secretRef:
+                name: {{ include "recommendation-platform.fullname" . }}-secrets
+          volumeMounts:
+            - name: model-storage
+              mountPath: /app/models
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: {{ include "recommendation-platform.fullname" . }}-model-storage

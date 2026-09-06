@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-frontend
+  namespace: recommendation-platform
+  labels:
+    app: recommendation-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendation-frontend
+  template:
+    metadata:
+      labels:
+        app: recommendation-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: recommendation-platform-frontend:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: recommendation-platform-config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"

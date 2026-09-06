@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-init-scripts
+  namespace: recommendation-platform
+  labels:
+    app: recommendation-platform
+data:
+  init_db.py: |
+    # Database initialization script
+    # This would contain the SQL to initialize the database schema
+    # For now, we'll just have a placeholder
+    print("Initializing database...")
+
+    # In a real implementation, you would run SQL migrations here
+    # For example, using Alembic or Flyway

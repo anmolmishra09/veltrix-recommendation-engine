@@ -1,0 +1,194 @@
+# Default values for recommendation-platform.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2
+
+# Namespace configuration
+namespace:
+  create: true
+  name: recommendation-platform
+
+image:
+  repository: recommendation-platform
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Configuration settings
+config:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+
+  # Database
+  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/recommendation_db"
+
+  # Redis
+  REDIS_URL: "redis://redis:6379/0"
+
+  # Kafka
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  # MLflow
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+
+  # Feature Store
+  FEAST_REPO_PATH: "/feast/feast_repository"
+
+  # S3/MinIO
+  S3_ENDPOINT: "http://minio:9000"
+  S3_ACCESS_KEY: "minio"
+  S3_SECRET_KEY: "minio123"
+  S3_BUCKET: "mlflow"
+
+  # API
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+
+  # Model
+  MODEL_EMBEDDING_DIM: "64"
+  MODEL_BATCH_SIZE: "256"
+  MODEL_LEARNING_RATE: "0.001"
+  MODEL_EPOCHS: "10"
+  MODEL_SEED: "42"
+
+  # Recommendation
+  REC_DEFAULT_K: "10"
+  REC_MAX_K: "100"
+  REC_RANKING_MODEL_TYPE: "xgboost"
+
+# Secrets (these should be overridden in production with actual secrets)
+secrets:
+  POSTGRES_PASSWORD: "postgres"
+  REDIS_PASSWORD: "redis"
+  MINIO_ACCESS_KEY: "minio"
+  MINIO_SECRET_KEY: "minio123"
+  SECRET_KEY: "change-this-secret-key-in-production"
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+
+# API service
+api:
+  service:
+    type: ClusterIP
+    port: 80
+
+# Frontend service
+frontend:
+  service:
+    type: LoadBalancer
+    port: 80
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: recommendation-platform.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: recommendation-platform-tls
+  #    hosts:
+  #      - recommendation-platform.example.com
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selectors
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Persistence
+persistence:
+  enabled: true
+  ## A manually managed Persistent Volume and Claim
+  ## Requires Persistence Volume API to be enabled
+  ##
+  # existingClaim: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  storageClass: ""
+  annotation: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 2000
+
+# Security context
+securityContext:
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+
+# Service account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Environment-specific values
+# These can be overridden with --set or using -f environment-specific.yaml

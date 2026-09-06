@@ -1,0 +1,1 @@
+"""Embedding module for product and user embeddings."""

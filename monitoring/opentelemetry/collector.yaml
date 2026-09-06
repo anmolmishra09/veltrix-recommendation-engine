@@ -1,0 +1,19 @@
+# Simple OpenTelemetry Collector Configuration
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+processors:
+  batch:
+
+exporters:
+  logging:
+  otlp:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]

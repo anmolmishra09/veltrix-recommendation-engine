@@ -1,0 +1,103 @@
+groups:
+- name: recommendation-alerts
+  rules:
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate on recommendation API"
+      description: "Error rate is above 5% for more than 2 minutes."
+
+  - alert: HighLatency
+    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1.0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency on recommendation API"
+      description: "95th percentile latency is above 1 second for more than 2 minutes."
+
+  - alert: KafkaConsumerLagHigh
+    expr: sum(kafka_consumergroup_lag) > 1000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Kafka consumer lag"
+      description: "Total Kafka consumer lag is above 1000 messages for more than 5 minutes."
+
+  - alert: RedisMemoryUsageHigh
+    expr: redis_used_memory_bytes / redis_total_memory_available_bytes > 0.85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Redis memory usage"
+      description: "Redis memory usage is above 85% for more than 5 minutes."
+
+  - alert: ModelPredictionDrift
+    expr: increase(model_prediction_distribution_distance[1h]) > 0.1
+    for: 15m
+    labels:
+      severity: info
+    annotations:
+      summary: "Model prediction distribution drift detected"
+      description: "The distribution of model predictions has drifted significantly in the last hour."
+
+  - alert: FeatureDriftDetected
+    expr: feature_drift_score > 0.3
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Feature drift detected"
+      description: "Feature drift score is above 0.3 for more than 10 minutes."
+
+  - alert: LowCTR
+    expr: recommendation_ctr < 0.02
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low click-through rate"
+      description: "Recommendation CTR is below 2% for more than 15 minutes."
+
+  - alert: LowConversionRate
+    expr: recommendation_conversion_rate < 0.01
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low conversion rate"
+      description: "Recommendation conversion rate is below 1% for more than 15 minutes."
+
+  - alert: HighLatencySpike
+    expr: increase(http_request_duration_seconds_sum[5m]) / increase(http_request_duration_seconds_count[5m]) > 2.0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency spike"
+      description: "Average request latency has doubled in the last 5 minutes."
+
+  - alert: ExperimentImbalance
+    expr: |
+      (
+        sum by (experiment_id, variant) (experiment_exposure_count)
+        /
+        sum by (experiment_id) (experiment_exposure_count)
+      ) < 0.4
+      or
+      (
+        sum by (experiment_id, variant) (experiment_exposure_count)
+        /
+        sum by (experiment_id) (experiment_exposure_count)
+      ) > 0.6
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "Experiment traffic imbalance detected"
+      description: "Experiment traffic allocation is outside the 40-60% range for more than 10 minutes."

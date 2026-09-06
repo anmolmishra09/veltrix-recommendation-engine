@@ -1,0 +1,23 @@
+-- Seed data for interactions
+INSERT INTO interactions (user_id, product_id, event_type, timestamp, session_id, context, metadata, recommendation_id, ranking_position, recommendation_score) VALUES
+(1, 1, 'view', '2026-09-01 10:05:00', 'session_001', '{"source": "homepage"}', '{}', NULL, NULL, NULL),
+(1, 2, 'click', '2026-09-01 10:06:00', 'session_001', '{"source": "search", "query": "headphones"}', '{}', NULL, NULL, NULL),
+(1, 3, 'view', '2026-09-01 10:07:00', 'session_001', '{"source": "category", "category": "Clothing"}', '{}', NULL, NULL, NULL),
+(2, 4, 'view', '2026-09-01 11:00:00', 'session_002', '{"source": "homepage"}', '{}', NULL, NULL, NULL),
+(2, 5, 'purchase', '2026-09-01 11:05:00', 'session_002', '{"source": "email_promotion"}', '{}', NULL, NULL, NULL),
+(3, 6, 'view', '2026-09-01 12:00:00', 'session_003', '{"source": "search", "query": "yoga"}', '{}', NULL, NULL, NULL),
+(3, 7, 'click', '2026-09-01 12:02:00', 'session_003', '{"source": "related_products"}', '{}', NULL, NULL, NULL),
+(4, 8, 'view', '2026-09-01 13:00:00', 'session_004', '{"source": "homepage"}', '{}', NULL, NULL, NULL),
+(4, 9, 'add_to_cart', '2026-09-01 13:03:00', 'session_004', '{}', '{}', NULL, NULL, NULL),
+(5, 10, 'view', '2026-09-01 14:00:00', 'session_005', '{"source": "category", "category": "Home & Office"}', '{}', NULL, NULL, NULL),
+(5, 11, 'like', '2026-09-01 14:01:00', 'session_005', '{}', '{}', NULL, NULL, NULL),
+(6, 12, 'view', '2026-09-01 15:00:00', 'session_006', '{"source": "search", "query": "yoga blocks"}', '{}', NULL, NULL, NULL),
+(6, 13, 'click', '2026-09-01 15:02:00', 'session_006', '{}', '{}', NULL, NULL, NULL),
+(7, 14, 'view', '2026-09-01 16:00:00', 'session_007', '{"source": "homepage"}', '{}', NULL, NULL, NULL),
+(7, 15, 'purchase', '2026-09-01 16:05:00', 'session_007', '{"source": "retargeting_ad"}', '{}', NULL, NULL, NULL),
+(8, 1, 'view', '2026-09-01 17:00:00', 'session_008', '{"source": "email_newsletter"}', '{}', NULL, NULL, NULL),
+(8, 2, 'wishlist', '2026-09-01 17:01:00', 'session_008', '{}', '{}', NULL, NULL, NULL),
+(9, 3, 'view', '2026-09-01 18:00:00', 'session_009', '{"source": "social_media"}', '{}', NULL, NULL, NULL),
+(9, 4, 'click', '2026-09-01 18:03:00', 'session_009', '{}', '{}', NULL, NULL, NULL),
+(10, 5, 'view', '2026-09-01 19:00:00', 'session_010', '{"source": "homepage"}', '{}', NULL, NULL, NULL),
+(10, 6, 'purchase', '2026-09-01 19:05:00', 'session_010', '{}', '{}', NULL, NULL, NULL);
