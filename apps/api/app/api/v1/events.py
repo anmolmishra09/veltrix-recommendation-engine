@@ -1,14 +1,14 @@
-from pydantic import BaseModel, Field
-from typing import Any, Optional, Dict
-from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-from typing import Any, Optional, Dict
+"""
+Events endpoint for ingesting user interactions with Kafka integration.
+"""
+
 import logging
 import time
 import json
 import uuid
-
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+from typing import Any, Optional, Dict
 # Try to import Kafka dependencies
 try:
     from confluent_kafka import Producer
