@@ -9,6 +9,11 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
+def get_class_for_ndcg(val: float) -> str:
+    return "metric-good" if val >= 0.7 else "metric-poor"
+
+def get_class_for_mse(val: float) -> str:
+    return "metric-good" if val <= 0.2 else "metric-poor"
 def load_latest_evaluation_results(evaluation_type: str) -> Dict[str, Any]:
     """
     Load the latest evaluation results for a given type.

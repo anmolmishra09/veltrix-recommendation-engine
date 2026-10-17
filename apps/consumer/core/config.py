@@ -1,6 +1,8 @@
 """
 Consumer configuration.
 """
+from pydantic import Field
+from pydantic_settings import BaseSettings  # or from pydantic import BaseSettings depending on version
 from pydantic import BaseSettings
 from ..core.config import settings as base_settings
 

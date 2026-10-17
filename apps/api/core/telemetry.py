@@ -1,6 +1,7 @@
 """
 OpenTelemetry configuration.
 """
+import os
 from .config import settings
 import logging
 

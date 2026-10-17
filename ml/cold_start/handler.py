@@ -2,6 +2,7 @@
 Cold start handler for new users and new products.
 """
 import logging
+from typing import Dict, Any, Optional
 from typing import List, Tuple, Any, Optional, Union
 import numpy as np
 import pandas as pd

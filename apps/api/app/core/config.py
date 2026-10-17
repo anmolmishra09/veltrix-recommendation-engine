@@ -1,7 +1,8 @@
-"""
-Centralized application configuration using Pydantic Settings.
-"""
+
 import os
+from pydantic import Field
+from pydantic import Field
+from typing import Dict, List, Optional
 from typing import List, Optional, Union
 from pydantic import BaseSettings, Field, validator
 from pathlib import Path

@@ -1,3 +1,4 @@
+from datetime import datetime
 """
 Evaluation script for candidate generation.
 """
@@ -6,6 +7,7 @@ import numpy as np
 import os
 import logging
 import json
+from datetime import datetime
 from typing import Dict, List, Tuple, Any
 from ml.recommendation.candidate_generation.hybrid import HybridCandidateGenerator
 from ml.recommendation.candidate_generation.collaborative import CollaborativeCandidateGenerator

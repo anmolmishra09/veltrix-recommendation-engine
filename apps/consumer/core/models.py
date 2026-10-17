@@ -1,6 +1,7 @@
 """
 SQLAlchemy models for the consumer.
 """
+from sqlalchemy import Column, Integer, String, Index
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Float, JSON, ForeignKey, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship

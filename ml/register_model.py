@@ -1,8 +1,7 @@
-"""
-Model registration script for the recommendation platform.
-Registers trained models with MLflow tracking server.
-"""
+
 import os
+import hashlib
+from typing import Optional, Dict, Any
 import sys
 import argparse
 import logging

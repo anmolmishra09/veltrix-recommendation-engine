@@ -2,19 +2,23 @@
 Model evaluation script for the recommendation platform.
 Evaluates embedding and ranking models on test data.
 """
-import os
-import sys
 import argparse
+import json
 import logging
+import os
 import random
+import sys
+from typing import Any, Dict
+
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from sklearn.metrics import roc_auc_score, accuracy_score, precision_recall_fscore_support
-from ml.features.user_features import get_user_feature_vector
+from torch.utils.data import DataLoader, Dataset, TensorDataset
+
 from ml.features.product_features import get_product_feature_vector
+from ml.features.user_features import get_user_feature_vector
 from ml.recommendation.embeddings.model import EmbeddingModel
 from ml.recommendation.ranking.model import RankingModel
 from ml.utils.reproducibility import set_seed
@@ -22,11 +26,12 @@ from ml.utils.reproducibility import set_seed
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-class InteractionDataset(torch.utils.data.Dataset):
+
+class InteractionDataset(Dataset):
     """
     Dataset for interaction data (user, product, label).
     """
@@ -36,42 +41,53 @@ class InteractionDataset(torch.utils.data.Dataset):
 
         self.user_ids = self.interactions['user_id'].unique()
         self.product_ids = self.interactions['product_id'].unique()
-        self.user_id_to_idx = {uid: idx for idx, uid in enumerate(self.user_ids)}
-        self.product_id_to_idx = {pid: idx for idx, pid in enumerate(self.product_ids)}
+        self.user_id_to_idx = {str(uid): idx for idx, uid in enumerate(self.user_ids)}
+        self.product_id_to_idx = {str(pid): idx for idx, pid in enumerate(self.product_ids)}
         self.num_users = len(self.user_ids)
         self.num_products = len(self.product_ids)
 
         self.positives = []
+        positive_pairs = set()
         for _, row in self.interactions.iterrows():
             uidx = self.user_id_to_idx[str(row['user_id'])]
             pidx = self.product_id_to_idx[str(row['product_id'])]
             self.positives.append((uidx, pidx, 1.0))
+            positive_pairs.add((uidx, pidx))
 
         self.negatives = []
         for uidx, pidx, _ in self.positives:
             for _ in range(self.num_negatives):
                 neg_pidx = random.randint(0, self.num_products - 1)
-                while (uidx, neg_pidx) in [(u, p) for u, p, _ in self.positives]:
+                attempts = 0
+                while (uidx, neg_pidx) in positive_pairs and attempts < 100:
                     neg_pidx = random.randint(0, self.num_products - 1)
+                    attempts += 1
                 self.negatives.append((uidx, neg_pidx, 0.0))
 
         self.samples = self.positives + self.negatives
         random.shuffle(self.samples)
-        logger.info(f"Created evaluation dataset with {len(self.positives)} positives and {len(negatives)} negatives")
+        logger.info(
+            f"Created evaluation dataset with {len(self.positives)} positives and {len(self.negatives)} negatives"
+        )
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         uidx, pidx, label = self.samples[idx]
-        return torch.tensor(uidx, dtype=torch.long), torch.tensor(pidx, dtype=torch.long), torch.tensor(label, dtype=torch.float)
+        return (
+            torch.tensor(uidx, dtype=torch.long),
+            torch.tensor(pidx, dtype=torch.long),
+            torch.tensor(label, dtype=torch.float),
+        )
+
 
 def evaluate_embedding_model(
     model: EmbeddingModel,
     interactions_df: pd.DataFrame,
     num_negatives: int = 4,
-    batch_size: int = 512
-) -> dict:
+    batch_size: int = 512,
+) -> Dict[str, float]:
     """
     Evaluate the embedding model using AUC, accuracy, etc.
     """
@@ -102,7 +118,6 @@ def evaluate_embedding_model(
     all_probs = np.array(all_probs)
     all_preds = (all_probs >= 0.5).astype(int)
 
-    # Compute metrics
     try:
         auc = roc_auc_score(all_labels, all_probs)
     except Exception as e:
@@ -111,7 +126,7 @@ def evaluate_embedding_model(
 
     accuracy = accuracy_score(all_labels, all_preds)
     precision, recall, f1, _ = precision_recall_fscore_support(
-        all_labels, all_preds, average='binary'
+        all_labels, all_preds, average='binary', zero_division=0
     )
 
     metrics = {
@@ -119,29 +134,26 @@ def evaluate_embedding_model(
         "accuracy": float(accuracy),
         "precision": float(precision),
         "recall": float(recall),
-        "f1": float(f1)
+        "f1": float(f1),
     }
 
     logger.info(f"Embedding model evaluation metrics: {metrics}")
     return metrics
 
+
 def evaluate_ranking_model(
     model: RankingModel,
     interactions_df: pd.DataFrame,
-    batch_size: int = 512
-) -> dict:
+    batch_size: int = 512,
+) -> Dict[str, float]:
     """
     Evaluate the ranking model.
-    For ranking, we'll predict the probability of interaction given user and product features.
+    Predicts probability of interaction given user and product features.
     """
     logger.info("Evaluating ranking model...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
-
-    # Prepare features (same as in training)
-    from ml.features.user_features import get_user_feature_vector
-    from ml.features.product_features import get_product_feature_vector
 
     user_ids = interactions_df['user_id'].unique()
     product_ids = interactions_df['product_id'].unique()
@@ -158,29 +170,30 @@ def evaluate_ranking_model(
             logger.warning(f"Skipping row due to feature error: {e}")
 
     negatives = []
-    interacted_set = set(
-        (str(row['user_id']), str(row['product_id'])) for _, row in interactions_df.iterrows()
-    )
+    interacted_set = {
+        (str(row['user_id']), str(row['product_id']))
+        for _, row in interactions_df.iterrows()
+    }
     max_negatives = len(positives) * 2
     tried = 0
     while len(negatives) < max_negatives and tried < max_negatives * 10:
         tried += 1
-        uid = random.choice(user_ids)
-        pid = random.choice(product_ids)
+        uid = str(random.choice(user_ids))
+        pid = str(random.choice(product_ids))
         if (uid, pid) in interacted_set:
             continue
         try:
             u_feat = get_user_feature_vector(uid)
             p_feat = get_product_feature_vector(pid)
             negatives.append((u_feat, p_feat, 0.0))
-        except Exception as e:
+        except Exception:
             continue
 
     samples = positives + negatives
     random.shuffle(samples)
     logger.info(f"Evaluation ranking set: {len(positives)} positives, {len(negatives)} negatives")
 
-    if len(samples) == 0:
+    if not samples:
         logger.error("No samples for ranking evaluation")
         return {"auc": 0.5, "accuracy": 0.5, "precision": 0.0, "recall": 0.0, "f1": 0.0}
 
@@ -192,7 +205,7 @@ def evaluate_ranking_model(
     product_tensor = torch.from_numpy(product_feats).to(device)
     labels_tensor = torch.from_numpy(labels).to(device)
 
-    dataset = torch.utils.data.TensorDataset(user_tensor, product_tensor, labels_tensor)
+    dataset = TensorDataset(user_tensor, product_tensor, labels_tensor)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     all_labels = []
@@ -220,7 +233,7 @@ def evaluate_ranking_model(
 
     accuracy = accuracy_score(all_labels, all_preds)
     precision, recall, f1, _ = precision_recall_fscore_support(
-        all_labels, all_preds, average='binary'
+        all_labels, all_preds, average='binary', zero_division=0
     )
 
     metrics = {
@@ -228,11 +241,12 @@ def evaluate_ranking_model(
         "accuracy": float(accuracy),
         "precision": float(precision),
         "recall": float(recall),
-        "f1": float(f1)
+        "f1": float(f1),
     }
 
     logger.info(f"Ranking model evaluation metrics: {metrics}")
     return metrics
+
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate recommendation models')
@@ -242,10 +256,8 @@ def main():
     parser.add_argument('--seed', type=int, default=42, help='Random seed')
     args = parser.parse_args()
 
-    # Set seed for reproducibility
     set_seed(args.seed)
 
-    # Load interactions data
     interactions_path = os.path.join(args.data_dir, 'interactions.csv')
     if not os.path.exists(interactions_path):
         logger.error(f"Interactions file not found at {interactions_path}")
@@ -255,23 +267,20 @@ def main():
     interactions_df = pd.read_csv(interactions_path)
     logger.info(f"Loaded {len(interactions_df)} interactions")
 
-    # Load embedding model
     embedding_model_path = os.path.join(args.model_dir, 'embedding_model.pth')
     if not os.path.exists(embedding_model_path):
         logger.error(f"Embedding model not found at {embedding_model_path}")
         sys.exit(1)
 
-    embedding_model = EmbeddingModel(num_users=1000, num_products=100, embedding_dim=64)  # TODO: get actual sizes
+    embedding_model = EmbeddingModel(num_users=1000, num_products=100, embedding_dim=64)
     embedding_model.load_state_dict(torch.load(embedding_model_path, map_location='cpu'))
     logger.info(f"Loaded embedding model from {embedding_model_path}")
 
-    # Load ranking model
     ranking_model_path = os.path.join(args.model_dir, 'ranking_model.pth')
     if not os.path.exists(ranking_model_path):
         logger.error(f"Ranking model not found at {ranking_model_path}")
         sys.exit(1)
 
-    # We need to know feature dimensions; we'll infer from a sample
     try:
         sample_user_feat = get_user_feature_vector("1")
         sample_product_feat = get_product_feature_vector("1")
@@ -290,21 +299,18 @@ def main():
     ranking_model.load_state_dict(torch.load(ranking_model_path, map_location='cpu'))
     logger.info(f"Loaded ranking model from {ranking_model_path}")
 
-    # Evaluate embedding model
     emb_metrics = evaluate_embedding_model(
         model=embedding_model,
         interactions_df=interactions_df,
         batch_size=args.batch_size
     )
 
-    # Evaluate ranking model
     rank_metrics = evaluate_ranking_model(
         model=ranking_model,
         interactions_df=interactions_df,
         batch_size=args.batch_size
     )
 
-    # Print results
     print("\n=== Embedding Model Evaluation ===")
     for k, v in emb_metrics.items():
         print(f"{k}: {v:.4f}")
@@ -313,9 +319,8 @@ def main():
     for k, v in rank_metrics.items():
         print(f"{k}: {v:.4f}")
 
-    # Optionally save metrics to file
+    os.makedirs(args.model_dir, exist_ok=True)
     metrics_file = os.path.join(args.model_dir, 'evaluation_metrics.json')
-    import json
     metrics = {
         "embedding": emb_metrics,
         "ranking": rank_metrics
@@ -323,6 +328,7 @@ def main():
     with open(metrics_file, 'w') as f:
         json.dump(metrics, f, indent=2)
     logger.info(f"Evaluation metrics saved to {metrics_file}")
+
 
 if __name__ == "__main__":
     main()

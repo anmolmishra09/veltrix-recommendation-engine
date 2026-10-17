@@ -1,6 +1,7 @@
 """
 SQLAlchemy models for the recommendation platform.
 """
+from sqlalchemy import Column, Integer, String, DateTime, Index
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Float, JSON, ForeignKey, CheckConstraint, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
